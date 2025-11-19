@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
+import { useToast } from '@/hooks/use-toast';
 
 interface Chapter {
   id: number;
@@ -69,6 +70,10 @@ const chapters: Chapter[] = [
 export default function Index() {
   const [currentChapter, setCurrentChapter] = useState<number | null>(null);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
+  const [customImages, setCustomImages] = useState<Record<number, string>>({});
+  const [isEditMode, setIsEditMode] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const goToChapter = (chapterId: number) => {
     if (currentChapter !== null) {
@@ -95,6 +100,49 @@ export default function Index() {
 
   const goToContents = () => {
     setCurrentChapter(null);
+  };
+
+  const handleImageUpload = (chapterId: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: 'Ошибка',
+          description: 'Размер файла не должен превышать 5 МБ',
+          variant: 'destructive'
+        });
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCustomImages(prev => ({
+          ...prev,
+          [chapterId]: reader.result as string
+        }));
+        toast({
+          title: 'Успешно!',
+          description: 'Фотография загружена',
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = (chapterId: number) => {
+    setCustomImages(prev => {
+      const newImages = { ...prev };
+      delete newImages[chapterId];
+      return newImages;
+    });
+    toast({
+      title: 'Удалено',
+      description: 'Фотография удалена'
+    });
+  };
+
+  const getCurrentImage = (chapter: Chapter) => {
+    return customImages[chapter.id] || chapter.imageUrl;
   };
 
   if (currentChapter === null) {
@@ -167,8 +215,19 @@ export default function Index() {
                 <Icon name="BookOpen" size={20} className="mr-2" />
                 Содержание
               </Button>
-              <div className="text-sm font-medium opacity-90">
-                Глава {chapter.id} из {chapters.length}
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  className="text-white hover:bg-white/20"
+                >
+                  <Icon name={isEditMode ? "Eye" : "Pencil"} size={18} className="mr-2" />
+                  {isEditMode ? 'Просмотр' : 'Редактировать'}
+                </Button>
+                <div className="text-sm font-medium opacity-90">
+                  Глава {chapter.id} из {chapters.length}
+                </div>
               </div>
             </div>
 
@@ -177,18 +236,61 @@ export default function Index() {
                 {chapter.title}
               </h1>
 
-              {chapter.imageUrl && (
-                <div className="mb-8 rounded-lg overflow-hidden shadow-lg">
-                  <img 
-                    src={chapter.imageUrl} 
-                    alt={chapter.title}
-                    className="w-full h-64 md:h-96 object-cover"
-                  />
-                  <div className="bg-muted px-4 py-2 text-sm text-muted-foreground text-center">
-                    Место для вашей фотографии
+              <div className="mb-8 rounded-lg overflow-hidden shadow-lg border-2 border-muted">
+                {getCurrentImage(chapter) ? (
+                  <div className="relative group">
+                    <img 
+                      src={getCurrentImage(chapter)} 
+                      alt={chapter.title}
+                      className="w-full h-64 md:h-96 object-cover"
+                    />
+                    {isEditMode && (
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <Button
+                          onClick={() => fileInputRef.current?.click()}
+                          size="sm"
+                          className="bg-white text-primary hover:bg-white/90"
+                        >
+                          <Icon name="Upload" size={18} className="mr-2" />
+                          Заменить
+                        </Button>
+                        {customImages[chapter.id] && (
+                          <Button
+                            onClick={() => removeImage(chapter.id)}
+                            size="sm"
+                            variant="destructive"
+                          >
+                            <Icon name="Trash2" size={18} className="mr-2" />
+                            Удалить
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div 
+                    onClick={() => isEditMode && fileInputRef.current?.click()}
+                    className={`w-full h-64 md:h-96 bg-muted flex flex-col items-center justify-center ${isEditMode ? 'cursor-pointer hover:bg-muted/80' : ''}`}
+                  >
+                    <Icon name="ImagePlus" size={48} className="text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">
+                      {isEditMode ? 'Нажмите, чтобы загрузить фото' : 'Фотография не загружена'}
+                    </p>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleImageUpload(chapter.id, e)}
+                />
+                {isEditMode && (
+                  <div className="bg-orange-50 px-4 py-2 text-sm text-primary text-center border-t border-primary/20">
+                    💡 Нажмите на фото, чтобы заменить его своим
+                  </div>
+                )}
+              </div>
 
               <div className="prose prose-lg max-w-none">
                 {chapter.content.map((paragraph, index) => (
