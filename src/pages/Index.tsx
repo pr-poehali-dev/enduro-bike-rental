@@ -68,6 +68,7 @@ const chapters: Chapter[] = [
 
 export default function Index() {
   const [currentChapter, setCurrentChapter] = useState<number | null>(null);
+  const [showFinalPage, setShowFinalPage] = useState(false);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
 
   const goToChapter = (chapterId: number) => {
@@ -95,7 +96,87 @@ export default function Index() {
 
   const goToContents = () => {
     setCurrentChapter(null);
+    setShowFinalPage(false);
   };
+
+  const goToFinalPage = () => {
+    setShowFinalPage(true);
+  };
+
+  if (showFinalPage) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <div className="animate-fade-in">
+            <Card className="overflow-hidden border-2 border-primary/20 shadow-2xl">
+              <div className="bg-gradient-to-br from-primary to-orange-600 text-white p-12 text-center">
+                <div className="mb-6">
+                  <Icon name="BookHeart" size={64} className="mx-auto opacity-90" />
+                </div>
+                <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+                  Благодарности
+                </h1>
+              </div>
+              
+              <div className="p-8 md:p-12 bg-white">
+                <div className="text-center mb-12">
+                  <p className="text-xl text-foreground leading-relaxed mb-8 italic">
+                    "Спасибо всем, кто со мной так же работал и проводил время. Эта так называемая книга была написана с помощью моих воспоминаний и с помощью нейронки."
+                  </p>
+                </div>
+
+                <div className="border-t-2 border-primary/20 pt-8 mt-8">
+                  <h2 className="text-2xl font-bold text-secondary mb-6 text-center">
+                    Об авторе
+                  </h2>
+                  <div className="bg-gradient-to-br from-orange-50 to-white p-8 rounded-lg border-2 border-primary/20">
+                    <div className="text-center mb-6">
+                      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
+                        <Icon name="User" size={40} className="text-primary" />
+                      </div>
+                      <h3 className="text-3xl font-bold text-primary mb-2">Максим</h3>
+                      <p className="text-muted-foreground">Автор и основатель проката эндуро</p>
+                    </div>
+                    
+                    <div className="space-y-4 mt-8">
+                      <a 
+                        href="tel:+79939510231"
+                        className="flex items-center justify-center gap-3 p-4 bg-white rounded-lg border-2 border-muted hover:border-primary hover:bg-orange-50 transition-all group"
+                      >
+                        <Icon name="Phone" size={24} className="text-primary group-hover:scale-110 transition-transform" />
+                        <span className="text-lg font-medium text-secondary">+7 (993) 951-02-31</span>
+                      </a>
+                      
+                      <a 
+                        href="https://t.me/advo_tmax"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-3 p-4 bg-white rounded-lg border-2 border-muted hover:border-primary hover:bg-orange-50 transition-all group"
+                      >
+                        <Icon name="Send" size={24} className="text-primary group-hover:scale-110 transition-transform" />
+                        <span className="text-lg font-medium text-secondary">@advo_tmax</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-12 text-center">
+                  <Button
+                    onClick={goToContents}
+                    size="lg"
+                    className="group"
+                  >
+                    <Icon name="BookOpen" size={20} className="mr-2" />
+                    Вернуться к содержанию
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (currentChapter === null) {
     return (
@@ -218,10 +299,11 @@ export default function Index() {
 
                 {currentChapter === chapters.length && (
                   <Button
-                    onClick={goToContents}
-                    variant="outline"
+                    onClick={goToFinalPage}
+                    className="group"
                   >
-                    Вернуться к содержанию
+                    Завершить чтение
+                    <Icon name="Heart" size={20} className="ml-2" />
                   </Button>
                 )}
               </div>
